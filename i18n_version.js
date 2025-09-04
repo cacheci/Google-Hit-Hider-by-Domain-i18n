@@ -2,10 +2,10 @@
 // @name        Google Hit Hider by Domain (Search Filter / Block Sites)
 // @author      Jefferson "jscher2000" Scher
 // @namespace   JeffersonScher
-// @version     2.2.8
-// @copyright   Copyright 2023 Jefferson Scher
+// @version     2.3.5
+// @copyright   Copyright 2025 Jefferson Scher
 // @license     BSD-3-Clause
-// @description Block unwanted sites from your Google, DuckDuckGo, Startpage.com, Bing and Yahoo search results. v2.2.8 2023-07-19
+// @description Block unwanted sites from your Google, DuckDuckGo, Startpage.com, Bing and Yahoo search results. v2.3.5 2025-03-21
 // @include     http*://www.google.*/*
 // @exclude http*://www.google.com/recaptcha/*
 // @include     http*://www.google.co*.*/*
@@ -14,6 +14,8 @@
 // @include     http*://startpage.com/*
 // @include     http*://*.startpage.com/*
 // @exclude https://www.startpage.com/*/ads?*
+// @exclude https://www.startpage.com/*/*/ads*
+// @exclude https://us-browse.startpage.com/av/proxy?*
 // @include     http*://duckduckgo.com/*
 // @include     http*://start.duckduckgo.com/*
 // @include     http*://safe.duckduckgo.com/*
@@ -26,6 +28,7 @@
 // @include     http*://searx.*/*
 // @include     http*://www.qwant.com/*
 // @include     http*://www.qwantjunior.com/*
+// @include     http*://www.baidu.com/*
 // @include     https://www.ecosia.org/search*
 // @grant       GM_getValue
 // @grant       GM.getValue
@@ -36,11 +39,13 @@
 // @grant       GM.deleteValue
 // @grant       GM_getResourceURL
 // @grant       GM.getResourceUrl
-// @resource    mycon https://www.jeffersonscher.com/gm/src/gfrk-GHHbD-ver228.png
+// @resource    mycon https://www.jeffersonscher.com/gm/src/gfrk-GHHbD-ver235.png
+// @downloadURL https://update.greasyfork.org/scripts/1682/Google%20Hit%20Hider%20by%20Domain%20%28Search%20Filter%20%20Block%20Sites%29.user.js
+// @updateURL https://update.greasyfork.org/scripts/1682/Google%20Hit%20Hider%20by%20Domain%20%28Search%20Filter%20%20Block%20Sites%29.meta.js
 // ==/UserScript==
 var script_about = "https://greasyfork.org/scripts/1682-google-hit-hider-by-domain-search-filter-block-sites";
 /*
-Copyright (c) 2023 Jefferson Scher.
+Copyright (c) 2025 Jefferson Scher.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met and subject to the following restriction:
 
@@ -84,7 +89,7 @@ function injectBaseCSS(){
                    'button.imgGHHbD{position:relative;z-index:1000;color:#609beb;background-color:#333;border:1px solid #609beb;} button.imgGHHbD:hover{background-color:#000;color:#0ee;}');
     GHHbD_addStyle("@media print {button.ghhider,button.imgGHHbD{display:none;}}");
     // Standard image results style block
-    if (location.search.indexOf("tbm=isch") > -1){
+    if (location.search.indexOf("tbm=isch") > -1 || location.search.indexOf("udm=2") > -1){
         var ghhbd_imgsty = document.createElement("style");
         ghhbd_imgsty.id = "ghhStyleImgResults";
         ghhbd_imgsty.setAttribute("type", "text/css");
@@ -108,8 +113,11 @@ function doSiteSpecific(){
     if (currentG.indexOf("google") > -1){
         engine = 'Google';
         // Google: div#res > div#search > div > div#ires > div.srg | ol#rso | div._NId | div.bkWMgd > div.g > div.rc > h3.r > a
+        //   3-21-2024 div#res > div#search > div > div#rso > div
         // Google in-depth articles: div#res > div#search > div#ires > ol#rso > div > li.g.card-section or li.g.ct-cs > div.rc > div > h3.r > a
         // Google Images (default): div#res > div#search > div > div#ires > div#rso > div#isr_mc > div > div#rg > div#rg_s > div.rg_di.rg_el.ivg-ig > a > img
+        //   3-21-2024 div#res > div#search > div > div#rso > div h3 a g-img > img
+        GHHbD_addStyle("#res>#search>div>#rso>div>.ghhider.ghhd,#res>#search>div>#rso>div.ghh1time{margin-block:1em;};");
     }
     if (currentG.indexOf("bing.com") > -1){
         engine = 'Bing';
@@ -121,8 +129,9 @@ function doSiteSpecific(){
         engine = 'DDG';
         // DuckDuckGo: div#links > div.results_links_deep > div.links_main > h2 > a
         GHHbD_addStyle(".links_main, .result__title{overflow:visible !important;} .result__title{white-space:nowrap !important;} " +
-                       ".ghhb{font-size:12px!important;margin-left:4px!important;} " +
-                       ".results_links_deep[blocknotice] + .results__sitelink--organics, .ghhdnone + .results__sitelink--organics, .results_links_deep[blocknotice] + .result__sitelinks--organics, .ghhdnone + .result__sitelinks--organics {display:none;}");
+                       ".ghhb{font-size:12px!important;margin-left:4px!important;}@media(min-width:600px){.ghhb {position:absolute;margin-top:4px!important}} " +
+                       '@media(max-width:599px){ol.react-results--main li h2 a {display:inline!important;}}' +
+                       ".results_links_deep[blocknotice] + .results__sitelink--organics,.ghhdnone + .results__sitelink--organics,.results_links_deep[blocknotice] + .result__sitelinks--organics,.ghhdnone + .result__sitelinks--organics {display:none;}");
         // v2.2.3 2022-05-02: div#links > div.nrn-react-div > article > div > h2 > a
         //   not sure what CSS changes might be needed yet
         // v2.2.5 2023-05-13: ol.react-results--main > li[data-layout="organic"] > article[data-testid="result"][data-nrn="result"] > div > h2 > a
@@ -133,7 +142,12 @@ function doSiteSpecific(){
         // Startpage: div#results > ol > li > div.result > h3 > a
         // 11/21/2018: [data-view="results"] div.columns article.column.column--main > div.column.column--main__content > ol.list-flat > li.search-result.search-item > h3.search-item__title > a
         //  7/03/2019: div.mainline-results__web section.w-gl > div.w-gl__result > a.w-gl__result-title
-        GHHbD_addStyle('.w-gl__result{overflow:visible !important;} .ghhd{padding:0 10px 8px 12px}button.ghhider{font-weight:normal}#ghhblockform input[type="checkbox"], #ghhmngform input[type="checkbox"]{width:unset;height:unset;position:static;margin:unset;border:unset;padding:unset;clip:unset;}' +
+        //  5/08/2024: div#main > div.w-gl > div.result > a.result-title.result-link, div#main > div.w-bg > div.result > div.result__main > a.result-title.result-link
+        // 12/08/2024: for news, add: section#main > div.css-ndwlbg > div.article > div.article-left > a[href]
+        GHHbD_addStyle('.w-gl__result{overflow:visible !important;}.ghhb{font-size:12px!important;}@media(min-width:651px){div.w-gl .result, div.w-bg .result{position:relative!important;}' +
+                       '.result button.ghhb{position:absolute;right:-30px;margin-top:-28px;} .result .result__main button.ghhb{margin-top:26px;}} .css-ndwlbg button.ghhb{float:right;margin-top:-2.5em;}' +
+                       'div.w-gl__result .ghhd{padding:0 10px 8px 12px}button.ghhider{font-weight:normal;}' +
+                       '#ghhblockform input[type="checkbox"], #ghhmngform input[type="checkbox"]{width:unset;height:unset;position:static;margin:unset;border:unset;padding:unset;clip:unset;}' +
                        '#ghhblockform button, #ghhmngform button{font-size:1em;font-weight:normal;border:1px solid #e3e3e3;border-radius:3px;padding:2px 8px;box-shadow:none} #ghhmngform{top:105px !important;}');
     }
     if (currentG.indexOf("yahoo.com") > -1){
@@ -167,7 +181,10 @@ function doSiteSpecific(){
     if (currentG.indexOf("ecosia") > -1){
         engine = 'Ecosia';
         // Ecosia: div.results-wrapper > div.container.results ... div.card-web ... div.result-firstline-title > a.result-title
-        GHHbD_addStyle("[ghhresult] h2.result-firstline-title>a.result-title{display:inline;}.ghhider{font-size:0.6em!important;}");
+        // 8/31: section.web__mainline ... div.mainline__result-wrapper:not([data-test-id="mainline-result-ad"]) ... div.result__body > div.result__header > div.result__title > a.result__link
+        GHHbD_addStyle('[ghhresult] h2.result-firstline-title>a.result-title,[ghhresult] div.result__title>a.result__link{display:inline;}' +
+                       '.web-result button.ghhb{position:absolute;right:-25px;top:0.5em;z-index:1;}.web-result .ghhdbuttons{position:relative;z-index:1;}' +
+                       'div[blocknotice]:not(.ghh1time)>article{display:none;}');
     }
 }
 doSiteSpecific();
@@ -274,9 +291,15 @@ function checkprefs(){
 if (!GM4){
     ghhPrefs = GM_getValue("ghhprefs", "");
     checkprefs();
-    GHHbDinit();
+    if (engine == 'Startpage') window.setTimeout(GHHbDinit, 300);
+    else GHHbDinit();
 } else {
-    GM.getValue("ghhprefs", "").then(function(value){ghhPrefs = value; checkprefs(); GHHbDinit();});
+    GM.getValue("ghhprefs", "").then(function(value){
+      ghhPrefs = value;
+      checkprefs();
+      if (engine == 'Startpage') window.setTimeout(GHHbDinit, 300);
+      else GHHbDinit();
+    });
 }
 
 function GHHbDinit(){
@@ -346,6 +369,8 @@ function GHHbDinit(){
         // Watch for changes that could be new instant or AJAX search results
         if (bAJAX == "on") setMutationWatch();
     }
+    // Delayed for Ecosia
+    if (engine == 'Ecosia') window.setTimeout(function(){hidehits(document.querySelectorAll('div.mainline__result-wrapper:not([data-test-id="mainline-result-ad"])'));}, 5000);
 }
 
 function setMutationWatch(){
@@ -423,6 +448,7 @@ function checkNode(el){
         if (el.nodeName == "DIV" && (el.classList.contains("result--web") || el.classList.contains("result--news") ||
                                      el.className == "card-mobile" || el.classList.contains('nrn-react-div'))) nlist = [el]; // Qwant, Ecosia, DDG-react
         else if (el.nodeName == "OL" && el.classList.contains('react-results--main')) nlist = el.querySelectorAll('li');
+        else if (engine == 'Ecosia') nlist = el.querySelectorAll('div.mainline__result-wrapper:not([data-test-id="mainline-result-ad"])');
         else nlist = el.querySelectorAll('div.result, div.result-op, div.links_main, div.serp-item, div.hd, li.b_algo, ol.list-flat > li, div.card-web div.card-mobile');
     }
     if (nlist.length > 0){
@@ -470,9 +496,13 @@ var parentcard;
 function hidehits(liels,ovrd){
     if (!liels){
         if (engine == 'Google'){
-            liels = document.querySelectorAll("#res li.g, #res div.srg div.g, #res div._NId div.g, #res div._bkWMgd div.g, #res #rso div.g, #res #GTR div.g, #res #isr_mc, g-section-with-header g-scrolling-carousel g-inner-card, g-card div.dbsr, g-card, [data-async-context^=\"query:\"] div.g");
+            liels = document.querySelectorAll("#res li.g, #res div.srg div.g, #res div._NId div.g, #res div._bkWMgd div.g, #res #rso div.g, #res>#search>div>#rso>div, #res #GTR div.g, #res #isr_mc, g-section-with-header g-scrolling-carousel g-inner-card, g-card div.dbsr, g-card, [data-async-context^=\"query:\"] div.g");
         } else {
-            liels = document.querySelectorAll('div#results li, div#results > div.result, div#links > div.results_links_deep > div.links_main, div#links > div.nrn-react-div, div#b_content ol > li.b_algo, div#results div#web > ol > li, div#WS2m > div.w, div.sw-CardBase, div.serp-list > div.serp-item, ul.serp-list > li.serp-item, div#main_results > div.result, div.results-column div.result--web, div.results-column div.result--news, #content_left > div.result.c-container, #content_left > div.result-op.c-container, ol.list-flat > li, div.w-gl__result, div.card-web div.card-mobile, ol.react-results--main > li');
+            liels = document.querySelectorAll('div#results li, div#results > div.result, div#links > div.results_links_deep > div.links_main, div#links > div.nrn-react-div, div#b_content ol > li.b_algo, div#results div#web > ol > li, div#WS2m > div.w, div.sw-CardBase, div.serp-list > div.serp-item, ul.serp-list > li.serp-item, div#main_results > div.result, div.results-column div.result--web, div.results-column div.result--news, #content_left > div.result.c-container, #content_left > div.result-op.c-container, ol.list-flat > li, div.w-gl__result, div.w-gl > div.result, div.w-bg > div.result, div.css-ndwlbg > div.article, div.card-web div.card-mobile, ol.react-results--main > li');
+            if (liels.length == 0 && engine == 'Ecosia'){
+                window.setTimeout(function(){hidehits(document.querySelectorAll('div.mainline__result-wrapper:not([data-test-id="mainline-result-ad"])'), true);}, 250);
+                return;
+            }
         }
         if (nws == true) liels = document.querySelectorAll('#res #rso div[class][data-hveid]'); //v2.2.6 for News results under www
         if (!liels) return;
@@ -481,14 +511,32 @@ function hidehits(liels,ovrd){
         liels = document.querySelectorAll('div.rg_di, div.isv-r');
     } else if (liels.length==0){
         if (engine == 'Google'){
-            liels = document.querySelectorAll("#res li.g, #res div.srg div.g, #res div._NId div.g, #res div._bkWMgd div.g, #res #rso div.g, #res #GTR div.g, #res #isr_mc, g-section-with-header g-scrolling-carousel g-inner-card, g-card div.dbsr, g-card, [data-async-context^=\"query:\"] div.g");
+            liels = document.querySelectorAll("#res li.g, #res div.srg div.g, #res div._NId div.g, #res div._bkWMgd div.g, #res #rso div.g, #res>#search>div>#rso>div, #res #GTR div.g, #res #isr_mc, g-section-with-header g-scrolling-carousel g-inner-card, g-card div.dbsr, g-card, [data-async-context^=\"query:\"] div.g");
         } else {
-            liels = document.querySelectorAll('div#results li, div#results > div.result, div#links > div.results_links_deep > div.links_main, div#links > div.nrn-react-div, div#b_content ol > li.b_algo, div#results div#web > ol > li, div#WS2m > div.w, div.sw-CardBase, div.serp-list > div.serp-item, ul.serp-list > li.serp-item, div#main_results > div.result, div.results-column div.result--web, div.results-column div.result--news, #content_left > div.result.c-container, #content_left > div.result-op.c-container, ol.list-flat > li, div.w-gl__result, div.card-web div.card-mobile, ol.react-results--main > li');
+            liels = document.querySelectorAll('div#results li, div#results > div.result, div#links > div.results_links_deep > div.links_main, div#links > div.nrn-react-div, div#b_content ol > li.b_algo, div#results div#web > ol > li, div#WS2m > div.w, div.sw-CardBase, div.serp-list > div.serp-item, ul.serp-list > li.serp-item, div#main_results > div.result, div.results-column div.result--web, div.results-column div.result--news, #content_left > div.result.c-container, #content_left > div.result-op.c-container, ol.list-flat > li, div.w-gl__result, div.w-gl > div.result, div.w-bg > div.result, div.css-ndwlbg > div.article, div.card-web div.card-mobile, ol.react-results--main > li');
         }
     }
     if (liels.length == 0) return;
     if (liels.length == 1){ // Google Standard Image Results
         if(liels[0].id == "isr_mc") liels = liels[0].querySelectorAll(".rg_di");
+    }
+    // Clean up overselection on Google wiki result pages? v2.3.5
+    if (engine == 'Google'){
+      var nlndx, crntNode, nlTemp = [], nltndx, arrEls = [];
+      for (nlndx=0; nlndx<liels.length; nlndx++){
+        crntNode = liels[nlndx];
+        if (crntNode.querySelectorAll('a>h3, h3>a').length > 1){
+          nlTemp = crntNode.querySelectorAll('a>h3, h3>a');
+          for (nltndx=0; nltndx<nlTemp.length; nltndx++){
+            crntNode = nlTemp[nltndx];
+            while (crntNode.parentNode.querySelectorAll('a>h3, h3>a').length == 1) crntNode = crntNode.parentNode;
+            arrEls.push(crntNode);
+          }
+        } else {
+          arrEls.push(liels[nlndx]);
+        }
+      }
+      liels = arrEls;
     }
     var hosts, hiders, nhider, i, j, k, hid, ael, ahref, dom, dompart, btn, apar, dgone, pban, linkwidth;
     hosts = blist;
@@ -501,11 +549,12 @@ function hidehits(liels,ovrd){
                                                         liels[i].nodeName === 'G-INNER-CARD' || liels[i].nodeName === 'G-CARD')) ||
              (liels[i].parentNode.nodeName == "DIV" && liels[i].closest('#rso, [data-async-context^="query:"]') !== null) ||
              (engine != 'Google' && liels[i].parentNode.nodeName == "DIV") ||
+             (engine == 'Startpage' && liels[i].classList.contains("result")) ||
              liels[i].classList.contains('serp-item')) &&
             liels[i].className.indexOf("gbt")!=0 &&
             liels[i].classList.contains("gplusgrid") === false &&
             liels[i].classList.contains("mitem") === false &&
-            liels[i].classList.contains("kno-kp") === false) {
+            liels[i].classList.contains("kno-kp") === false && (liels[i].outerHTML.indexOf('data-attrid="images') == -1)) {
             liels[i].setAttribute("ghhresult","unset");
             hiders = liels[i].getElementsByClassName("ghhider");
             nhider = hiders.length;
@@ -532,7 +581,7 @@ function hidehits(liels,ovrd){
                         else ael.setAttribute('href', ael.textContent);
                     }}
                 }
-                if (engine == 'Startpage'){
+                if (engine == 'Startpage' && !ael){
                     ael = liels[i].querySelector('a.result-link');
                 }
                 if (ael){ahref=ael.getAttribute("href"); if(ahref){if (ahref.search(/http|ftp/i)==0 || ahref.indexOf("/interstitial")==0 ||
@@ -670,6 +719,10 @@ function hidehits(liels,ovrd){
                                 apar.appendChild(btn);
                                 // full link text tooltip
                                 if (engine == 'Yahoo' && apar.querySelector('a').childNodes[0].nodeName == 'SPAN') apar.querySelector('a').setAttribute("title",apar.querySelector('a').childNodes[1].textContent);
+                                else if (engine == 'Startpage' && apar.nodeName == 'A') {
+                                  apar.parentNode.insertBefore(btn, apar.nextSibling);
+                                  apar.setAttribute("title",apar.firstElementChild.textContent);
+                                }
                                 else apar.querySelector('a').setAttribute("title",apar.querySelector('a').textContent);
                             } else if (apar.parentNode.parentNode.nodeName == 'G-CARD'){
                                 apar.parentNode.appendChild(btn);
@@ -687,6 +740,11 @@ function hidehits(liels,ovrd){
                                 if (apar.nextSibling) apar.parentNode.insertBefore(btn,apar.nextSibling);
                                 else apar.parentNode.appendChild(btn);
                             }
+                            // Reposition on Google's flex layout v2.3.4 3/15/2025
+                            if (engine == 'Google' && window.getComputedStyle(btn.parentNode).display == "flex"){
+                                btn.parentNode.style.position = 'relative';
+                                btn.setAttribute('style', 'position:absolute;right:0;top:4.25em');
+                            }
                             // Move button to citeline 6/10/2013; updated 8/16/2020 to look for action-menu first
                             if (bbpos == "C") {
                                 var axnmenu = liels[i].querySelector(".action-menu");
@@ -695,21 +753,25 @@ function hidehits(liels,ovrd){
                                     axnmenu.parentNode.insertBefore(btn, axnmenu);
                                     if (citelines.length > 0) axnmenu.parentNode.className = citelines[0].className;
                                 } else {
-                                    for (var citenum=0; citenum<citelines.length; citenum++){
-                                        if (window.getComputedStyle(citelines[citenum]).visibility != "hidden"){
-                                            citelines[citenum].parentNode.appendChild(btn);
-                                            btn.removeAttribute("style");
-                                            if (engine == 'Google') btn.style.visibility = 'visible';
-                                        } else { // add to visibility:hidden element for spacing
-                                            citelines[citenum].parentNode.appendChild(btn.cloneNode(true));
-                                            if (engine == 'Google') btn.style.visibility = 'hidden';
+                                    if (engine == 'Google' && window.getComputedStyle(btn.parentNode).display == "flex"){
+                                        btn.style.top = '1.75em';
+                                    } else {
+                                        for (var citenum=0; citenum<citelines.length; citenum++){
+                                            if (window.getComputedStyle(citelines[citenum]).visibility != "hidden"){
+                                                citelines[citenum].parentNode.appendChild(btn);
+                                                btn.removeAttribute("style");
+                                                if (engine == 'Google') btn.style.visibility = 'visible';
+                                            } else { // add to visibility:hidden element for spacing
+                                                citelines[citenum].parentNode.appendChild(btn.cloneNode(true));
+                                                if (engine == 'Google') btn.style.visibility = 'hidden';
+                                            }
                                         }
-                                    }
-                                    // Startpage.com
-                                    citelines = liels[i].querySelectorAll('.w-gl__result-url-container');
-                                    if (citelines.length > 0){
-                                        citelines[0].appendChild(btn);
-                                        btn.removeAttribute("style");
+                                        // Startpage.com
+                                        citelines = liels[i].querySelectorAll('.w-gl__result-url-container');
+                                        if (citelines.length > 0){
+                                            citelines[0].appendChild(btn);
+                                            btn.removeAttribute("style");
+                                        }
                                     }
                                 }
                             }
@@ -730,7 +792,8 @@ function hidehits(liels,ovrd){
                 }}}
             }
         } else { // Check for and handle Google standard image results - doesn't yet support BASIC image results
-            if (liels[i].classList.contains("rg_di") || liels[i].classList.contains("isv-r")){
+            if (liels[i].classList.contains("rg_di") || liels[i].classList.contains("isv-r")  ||
+                (liels[i].hasAttribute('data-attrid') && liels[i].getAttribute('data-attrid').indexOf('images') > -1) ){
                 if (!liels[i].hasAttribute("imgblock") || ovrd == true){ // skip if previously processed
                     liels[i].setAttribute("imgblock", "normal");
                     ael = liels[i].querySelector('a[href*="."]');
@@ -1105,7 +1168,7 @@ function rehide(e){
         // TODO notice is disappearing on Bing -- temporarily, do not move/remove the buttons div
         liel.querySelector('div.ghhd > div.ghhdbuttons').style.display = 'none';
     }
-    ael = liel.querySelector("h3 a, h2 a");
+    ael = liel.querySelector("h3 a, h2 a, a h2, a h3");
     if (!ael) ael = liel.querySelector("a");
     liel.classList.remove('ghh1time');
     replaceHit(dompart,ael,liel,"");
@@ -1153,6 +1216,7 @@ function addBlockForm(){
 }
 function showbfd(e) {
     var bbtn, bfdiv, fdom, pdom, fspan, pspan, tdiv, lt;
+    e.preventDefault();
     bbtn = e.target;
     fdom = bbtn.getAttribute("meta");
     if (!document.getElementById("ghhblockform")) addBlockForm();
@@ -1393,9 +1457,9 @@ function addMngBtn(){
     mbtn = document.createElement("button");
     mbtn.appendChild(document.createTextNode(txts.mngbtn[0]));
     mbtn.className="ghhider unbtn";
-    mbtn.setAttribute("title","Manage Google Hit Hider Settings");
+    mbtn.setAttribute("title","Manage Google Hit Hider Settings / Ctrl+click to re-hide");
     mbtn.id = "ghhMngBtn";
-    mbtn.addEventListener("click",showManageForm,true);
+    mbtn.addEventListener("click",handleManageButton,true);
     document.body.appendChild(mbtn);
 }
 function undupMngBtn(){
@@ -1403,6 +1467,16 @@ function undupMngBtn(){
     while (unbtns.length > 1){
         unbtns[unbtns.length - 1].parentNode.removeChild(unbtns[unbtns.length - 1]);
     }
+}
+function handleManageButton(e){
+  if (e.ctrlKey){
+    var btnM = e.target;
+    btnM.style.backgroundColor = 'aqua';
+    hidehits(null, false);
+    window.setTimeout(function(){btnM.style.backgroundColor = ''}, 250);
+  } else {
+    showManageForm(e);
+  }
 }
 async function showManageForm(e){
     if (window.self != window.top) return;
@@ -1475,22 +1549,22 @@ function addManageForm(){
     mfd.setAttribute("style","display:none;");
     mfd.innerHTML = "<form onsubmit=\"return false;\"><div id=\"ghhtsdiv\">" +
         "<p style=\"margin:6px 0 -1px 0\" id=\"ghhtstrip\">" +
-        "<button type=\"button\" id=\"ghhts1\" title=\"General Use and Notices\">主页</button>" +
-        "<button type=\"button\" id=\"ghhts2\" title=\"Regular Block List\">缩减列表</button>" +
-        "<button type=\"button\" id=\"ghhts3\" title=\"Perma-ban List\">屏蔽列表</button>" +
-        "<button type=\"button\" id=\"ghhts4\" title=\"Manage Script Options\">选项</button></p></div>" +
+        "<button type=\"button\" id=\"ghhts1\" title=\"General Use and Notices\">Home</button>" +
+        "<button type=\"button\" id=\"ghhts2\" title=\"Regular Block List\">Block</button>" +
+        "<button type=\"button\" id=\"ghhts3\" title=\"Perma-ban List\">Perma-ban</button>" +
+        "<button type=\"button\" id=\"ghhts4\" title=\"Manage Script Options\">Options</button></p></div>" +
         "<div id=\"mflists\" style=\"width:230px\">" +
-        "<div id=\"ghhmt1\"><p>欢迎来到Google Hit Hider! <a href=\"https://www.jeffersonscher.com/gm/google-hit-hider/\" " +
+        "<div id=\"ghhmt1\"><p>Welcome to Google Hit Hider! <a href=\"https://www.jeffersonscher.com/gm/google-hit-hider/\" " +
         "style=\"float:right;\" target=\"_blank\" title=\"Documentation\">JS</a></p>" +
         "<div class=\"ghhtab\">" +
-        "<p style=\"padding:0.25em;margin:0.25em\">点击结果旁的屏蔽按钮 ( <button type=\"button\" class=\"ghhider\" onclick=\"return false;\">" + txts.block[0] + "</button> ) " +
-        "以屏蔽对于网页的结果。一个 <b>缩减</b> 的结果将缩为一行展示， " +
-        "一个 <b>屏蔽</b> 的结果将完全消失。</p>" +
+        "<p style=\"padding:0.25em;margin:0.25em\">Click the block button ( <button type=\"button\" class=\"ghhider\" onclick=\"return false;\">" + txts.block[0] + "</button> ) " +
+        "next to a hit title to block results from that site. A <b>regular</b> blocked hit becomes a one-line notation, " +
+        "while a <b>Perma-ban</b> disappears completely.</p>" +
         "<p style=\"border-top:1px solid #000; padding:0.25em;margin:0.25em\"><label title=\"Switch between showing and hiding result titles " +
         "for regular blocked hits\"><input type=\"checkbox\" name=\"chkshownotc\" id=\"chkshownotc\"> Show hidden hit notices</label><br>" +
         "<label title=\"Switch between block dialog and one-click blocking\"><input type=\"checkbox\" name=\"chk1click\" " +
         "id=\"chk1click\"> Enable 1-click blocking</label></p>" +
-        "<p style=\"border-top:1px solid #000; padding:0.25em;margin:0.25em\">v2.2.8 &copy; 2023 Jefferson Scher. Learn more on " +
+        "<p style=\"border-top:1px solid #000; padding:0.25em;margin:0.25em\">v2.3.5 &copy; 2025 Jefferson Scher. Learn more on " +
         "<a href=\"" + script_about + "\">this script's page</a>.</p></div></div>" +
         "<div id=\"ghhmt2\" style=\"display:none\"><p>Click to remove from regular block list:</p>" +
         "<div class=\"ghhtab\"><ul id=\"ghhsitelist\"></ul></div></div>\n" +
@@ -1498,17 +1572,17 @@ function addManageForm(){
         "<div class=\"ghhtab\"><ul id=\"ghhpbanlist\"></ul></div></div>" +
         "<div id=\"ghhmt4\" style=\"display:none\"><p>Manage script options:</p>" +
         "<div class=\"ghhtab\" id=\"btnedit\">" +
-        "<p id=\"addradios\">添加屏蔽的域名到：<br>" +
-        "<label><input type=\"radio\" name=\"addpos\" value=\"end\"> 列表末尾</label><br>" +
-        "<label><input type=\"radio\" name=\"addpos\" value=\"top\"> 列表顶部</label><br>" +
-        "<label><input type=\"radio\" name=\"addpos\" value=\"sort\"> 按字母排序</label></p>" +
-        "<p id=\"aggressrads\" style=\"border-top:1px solid #000;padding-top:0.25em;margin-bottom:8px\">默认屏蔽方式：<br>" +
-        "<label><input type=\"radio\" name=\"agglevel\" value=\"none\"> 总是完整域名</label><br>" +
-        "<label><input type=\"radio\" name=\"agglevel\" value=\"all\"> 总是TLD</label><br>" +
-        "<label><input type=\"radio\" name=\"agglevel\" value=\"www\"> www 开头则使用 TLD</label></p>" +
-        "<p id=\"btnradios\" style=\"border-top:1px solid #000;padding-top:0.25em;margin-bottom:8px\">界面风格：<br>" +
-        "<label><input type=\"radio\" name=\"uistyle\" value=\"both\"> 展示管理功能和 " + txts.block[0] + " 按钮</label><br>" +
-        "<label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"checkbox\" name=\"mbiframe\" id=\"mbiframe\"> 管理 iframes 中的 Hiding</label><br>" +
+        "<p id=\"addradios\">Add newly blocked domains:<br>" +
+        "<label><input type=\"radio\" name=\"addpos\" value=\"end\"> at the end of the list</label><br>" +
+        "<label><input type=\"radio\" name=\"addpos\" value=\"top\"> at the top of the list</label><br>" +
+        "<label><input type=\"radio\" name=\"addpos\" value=\"sort\"> in alphabetical order</label></p>" +
+        "<p id=\"aggressrads\" style=\"border-top:1px solid #000;padding-top:0.25em;margin-bottom:8px\">Block form defaults to:<br>" +
+        "<label><input type=\"radio\" name=\"agglevel\" value=\"none\"> always the full domain</label><br>" +
+        "<label><input type=\"radio\" name=\"agglevel\" value=\"all\"> always the partial domain</label><br>" +
+        "<label><input type=\"radio\" name=\"agglevel\" value=\"www\"> partial domain for www only</label></p>" +
+        "<p id=\"btnradios\" style=\"border-top:1px solid #000;padding-top:0.25em;margin-bottom:8px\">User interface style:<br>" +
+        "<label><input type=\"radio\" name=\"uistyle\" value=\"both\"> Show Manage Hiding &amp; " + txts.block[0] + "</label><br>" +
+        "<label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type=\"checkbox\" name=\"mbiframe\" id=\"mbiframe\"> Manage Hiding in iframes</label><br>" +
         "<label title=\"You can click a " + txts.block[0] + " button to open this dialog\"><input type=\"radio\" name=\"uistyle\" value=\"blk\"> Hide Manage Hiding button</label><br>" +
         "<label title=\"" + txts.block[0] + " buttons will appear only when this dialog is displayed\"><input type=\"radio\" name=\"uistyle\" value=\"mng\"> Hide " + txts.block[0] + " buttons</label><br>" +
         "<span style=\"display:inline-block;margin-top:4px;\">Manage Hiding button position:</span><br>" +
